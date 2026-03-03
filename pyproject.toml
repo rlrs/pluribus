@@ -1,3 +1,11 @@
+[build-system]
+requires = [
+    "setuptools>=82.0.0",
+    "wheel",
+    "cython>=3.2.4",
+]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "pluribus"
 version = "0.1.0"

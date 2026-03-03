@@ -1,6 +1,8 @@
 from array import array
 from typing import Iterable, Sequence
 
+from .kernels import accumulate_strategy_sums_inplace, current_strategy_from_regret_array
+
 
 INT32_MIN = -(2**31)
 INT32_MAX = 2**31 - 1
@@ -88,13 +90,7 @@ class LazyIntRegretTable:
         return self.current_strategy_from_regret_array(regrets)
 
     def current_strategy_from_regret_array(self, regrets: Sequence[int]) -> list[float]:
-        num_actions = len(regrets)
-        positive = [max(0.0, float(v)) for v in regrets]
-        normalizer = sum(positive)
-        if normalizer <= 0.0:
-            uniform = 1.0 / num_actions
-            return [uniform] * num_actions
-        return [value / normalizer for value in positive]
+        return current_strategy_from_regret_array(regrets)
 
     def average_strategy(self, key: str, num_actions: int) -> list[float]:
         sums = self.get_average_strategy_sums(key, num_actions)
@@ -138,17 +134,11 @@ class LazyIntRegretTable:
 
         target = self._average_strategy[key]
         if isinstance(strategy, Sequence):
-            if len(strategy) != num_actions:
-                raise ValueError("strategy length mismatch")
-            for i in range(num_actions):
-                target[i] += weight * float(strategy[i])
+            accumulate_strategy_sums_inplace(target, strategy, weight)
             return
 
         values = list(strategy)
-        if len(values) != num_actions:
-            raise ValueError("strategy length mismatch")
-        for i, prob in enumerate(values):
-            target[i] += weight * float(prob)
+        accumulate_strategy_sums_inplace(target, values, weight)
 
     def scale_all_regrets(self, factor: float) -> None:
         if factor < 0:

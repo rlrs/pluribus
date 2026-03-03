@@ -3,6 +3,7 @@ from typing import Literal
 
 from pluribus_ri.core import LegalActions, NoLimitHoldemEngine, Street
 
+from .action_kernels import legal_action_specs as _legal_action_specs_kernel
 from .state_indexer import (
     HistoryScope,
     PostflopBucketPolicy,
@@ -48,27 +49,7 @@ class NLTHAbstractGameBuilder:
         self.history_scope = history_scope
 
     def legal_action_specs(self, engine: NoLimitHoldemEngine) -> list[AbstractActionSpec]:
-        if engine.hand_complete or engine.to_act is None:
-            return []
-
-        seat = int(engine.to_act)
-        legal = engine.get_legal_actions(seat)
-
-        actions: list[AbstractActionSpec] = []
-
-        if legal.can_fold:
-            actions.append(("fold", 0))
-
-        if legal.can_check:
-            actions.append(("check", 0))
-        elif legal.call_amount > 0:
-            actions.append(("call", 0))
-
-        if legal.min_raise_to is not None and legal.max_raise_to is not None:
-            for raise_to in self._raise_targets(engine=engine, legal=legal):
-                actions.append(("raise", raise_to))
-
-        return actions
+        return _legal_action_specs_kernel(engine, self.abstraction_config)
 
     def infoset_key(self, engine: NoLimitHoldemEngine, seat: int) -> str:
         return encode_engine_infoset_key(

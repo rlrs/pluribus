@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import random
 from typing import Callable, Generic, Protocol, Sequence, TypeVar
 
+from .kernels import accumulate_strategy_sums_inplace
 from .regret_table import LazyIntRegretTable
 
 
@@ -253,8 +254,7 @@ def _accumulate_strategy_sums(
     strategy: Sequence[float],
     weight: float,
 ) -> None:
-    for i, prob in enumerate(strategy):
-        sums[i] += weight * prob
+    accumulate_strategy_sums_inplace(sums, strategy, weight)
 
 
 def _renormalize_subset(strategy: Sequence[float], kept_indices: Sequence[int]) -> list[float]:

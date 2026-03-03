@@ -4,7 +4,8 @@ import eval7
 
 from pluribus_ri.core import NoLimitHoldemEngine
 
-from .infoset import PublicStateKey, encode_infoset_key
+from .infoset import PublicStateKey
+from .state_indexer_kernels import build_public_state_token
 
 
 HistoryScope = Literal["street", "all"]
@@ -106,14 +107,14 @@ def encode_engine_infoset_key(
     preflop_bucket_policy: PreflopBucketPolicy = "legacy",
     postflop_bucket_policy: PostflopBucketPolicy = "legacy",
 ) -> str:
-    public_key = build_public_state_key(engine=engine, history_scope=history_scope)
+    public_token = build_public_state_token(engine=engine, history_scope=history_scope)
     bucket = private_hand_bucket_with_policy(
         engine=engine,
         seat=seat,
         preflop_bucket_policy=preflop_bucket_policy,
         postflop_bucket_policy=postflop_bucket_policy,
     )
-    return encode_infoset_key(seat=seat, private_bucket=bucket, public_state=public_key)
+    return f"p{seat}|b{bucket}|{public_token}"
 
 
 def _preflop_bucket(

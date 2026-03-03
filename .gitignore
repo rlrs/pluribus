@@ -11,6 +11,15 @@ __pycache__/
 # Generated outputs
 artifacts/
 *.cache.pkl
+build/
+pluribus_ri/solver/_cykernels.c
+pluribus_ri/solver/_cykernels*.so
+pluribus_ri/core/_engine_kernels.c
+pluribus_ri/core/_engine_kernels*.so
+pluribus_ri/abstraction/_state_indexer_kernels.c
+pluribus_ri/abstraction/_state_indexer_kernels*.so
+pluribus_ri/abstraction/_action_kernels.c
+pluribus_ri/abstraction/_action_kernels*.so
 
 # macOS
 .DS_Store

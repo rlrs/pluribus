@@ -5,6 +5,15 @@ from typing import Any, Literal
 
 import eval7
 
+from .engine_kernels import (
+    all_live_players_all_in as _all_live_players_all_in_kernel,
+    eligible_seats as _eligible_seats_kernel,
+    filter_pending_eligible as _filter_pending_eligible_kernel,
+    live_player_count_and_last as _live_player_count_and_last_kernel,
+    next_pending_from as _next_pending_from_kernel,
+    total_pot as _total_pot_kernel,
+)
+
 
 RANKS = "23456789TJQKA"
 SUITS = "cdhs"
@@ -21,13 +30,13 @@ class Street(str, Enum):
     COMPLETE = "complete"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Action:
     kind: ActionKind
     amount: int = 0
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class LegalActions:
     can_fold: bool
     can_check: bool
@@ -45,7 +54,7 @@ class LegalActions:
         }
 
 
-@dataclass
+@dataclass(slots=True)
 class PlayerState:
     seat: int
     stack: int
@@ -60,7 +69,7 @@ class PlayerState:
         return not self.folded and self.hole_cards is not None
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class HandHistoryAction:
     seat: int
     street: str
@@ -169,7 +178,7 @@ class NoLimitHoldemEngine:
         self.current_bet = max(p.contributed_street for p in self.players)
         self.last_full_raise_size = self.big_blind
 
-        self.pending_to_act = {seat for seat in range(self.num_players) if self._is_eligible_to_act(seat)}
+        self.pending_to_act = _eligible_seats_kernel(self.players, self.num_players)
         self.to_act = self._next_pending_from(bb)
 
         if self.to_act is None:
@@ -177,7 +186,7 @@ class NoLimitHoldemEngine:
 
     @property
     def total_pot(self) -> int:
-        return sum(player.contributed_total for player in self.players)
+        return _total_pot_kernel(self.players, self.num_players)
 
     def clone(self, include_rng_state: bool = True) -> "NoLimitHoldemEngine":
         """
@@ -204,7 +213,10 @@ class NoLimitHoldemEngine:
             # Reuse RNG reference to avoid expensive RNG reinitialization.
             cloned.rng = self.rng
 
-        cloned.stacks = self.stacks[:]
+        if include_rng_state:
+            cloned.stacks = self.stacks[:]
+        else:
+            cloned.stacks = self.stacks
         cloned.players = [
             PlayerState(
                 seat=player.seat,
@@ -232,10 +244,13 @@ class NoLimitHoldemEngine:
         cloned._deck_index = self._deck_index
 
         cloned.hand_complete = self.hand_complete
-        cloned.winners = self.winners[:]
+        if include_rng_state:
+            cloned.winners = self.winners[:]
+            cloned._hand_starting_stacks = self._hand_starting_stacks[:]
+        else:
+            cloned.winners = self.winners
+            cloned._hand_starting_stacks = self._hand_starting_stacks
         cloned.action_log = self.action_log[:]
-
-        cloned._hand_starting_stacks = self._hand_starting_stacks[:]
         cloned._blind_positions = self._blind_positions
         return cloned
 
@@ -300,7 +315,7 @@ class NoLimitHoldemEngine:
 
         seat = self.to_act
         player = self.players[seat]
-        if not self._is_eligible_to_act(seat):
+        if player.folded or player.hole_cards is None or player.all_in or player.stack <= 0:
             raise ValueError(f"seat {seat} is not eligible to act")
 
         to_call = max(0, self.current_bet - player.contributed_street)
@@ -335,7 +350,12 @@ class NoLimitHoldemEngine:
         elif kind == "call":
             if call_amount <= 0:
                 raise ValueError("call is illegal when no chips are required")
-            self._commit_chips(seat, call_amount)
+            actual = call_amount if call_amount <= player.stack else player.stack
+            player.stack -= actual
+            player.contributed_street += actual
+            player.contributed_total += actual
+            if player.stack == 0:
+                player.all_in = True
             logged_amount = call_amount
             self.pending_to_act.discard(seat)
 
@@ -352,7 +372,12 @@ class NoLimitHoldemEngine:
                 raise ValueError("raise must exceed call amount")
 
             previous_bet = self.current_bet
-            self._commit_chips(seat, additional)
+            actual = additional if additional <= player.stack else player.stack
+            player.stack -= actual
+            player.contributed_street += actual
+            player.contributed_total += actual
+            if player.stack == 0:
+                player.all_in = True
             self.current_bet = raise_to
             logged_amount = raise_to
 
@@ -360,9 +385,7 @@ class NoLimitHoldemEngine:
             if raise_size >= self.last_full_raise_size:
                 self.last_full_raise_size = raise_size
 
-            self.pending_to_act = {
-                s for s in range(self.num_players) if s != seat and self._is_eligible_to_act(s)
-            }
+            self.pending_to_act = _eligible_seats_kernel(self.players, self.num_players, seat)
 
         else:
             raise ValueError(f"unknown action kind: {kind}")
@@ -485,15 +508,15 @@ class NoLimitHoldemEngine:
         return [seat for seat in range(self.num_players) if self.players[seat].in_hand]
 
     def _all_live_players_all_in(self) -> bool:
-        live = self._live_players()
-        return bool(live) and all(self.players[seat].all_in for seat in live)
+        return _all_live_players_all_in_kernel(self.players, self.num_players)
 
     def _next_pending_from(self, start_seat: int) -> int | None:
-        for offset in range(1, self.num_players + 1):
-            seat = (start_seat + offset) % self.num_players
-            if seat in self.pending_to_act and self._is_eligible_to_act(seat):
-                return seat
-        return None
+        return _next_pending_from_kernel(
+            start_seat,
+            self.pending_to_act,
+            self.players,
+            self.num_players,
+        )
 
     def _next_seat_with_stack(self, start_seat: int, exclude: int | None = None) -> int:
         for offset in range(self.num_players):
@@ -513,16 +536,20 @@ class NoLimitHoldemEngine:
         return order
 
     def _advance_after_action(self, last_actor: int) -> None:
-        live = self._live_players()
-        if len(live) == 1:
-            self._award_pot_without_showdown(live[0])
+        live_count, live_seat = _live_player_count_and_last_kernel(self.players, self.num_players)
+        if live_count == 1:
+            self._award_pot_without_showdown(live_seat)
             return
 
-        if self._all_live_players_all_in():
+        if _all_live_players_all_in_kernel(self.players, self.num_players):
             self._runout_and_showdown()
             return
 
-        self.pending_to_act = {seat for seat in self.pending_to_act if self._is_eligible_to_act(seat)}
+        self.pending_to_act = _filter_pending_eligible_kernel(
+            self.pending_to_act,
+            self.players,
+            self.num_players,
+        )
 
         if not self.pending_to_act:
             self._advance_street()
@@ -554,13 +581,14 @@ class NoLimitHoldemEngine:
 
         self.current_bet = 0
         self.last_full_raise_size = self.big_blind
-        self.pending_to_act = {seat for seat in range(self.num_players) if self._is_eligible_to_act(seat)}
+        self.pending_to_act = _eligible_seats_kernel(self.players, self.num_players)
 
-        if len(self._live_players()) == 1:
-            self._award_pot_without_showdown(self._live_players()[0])
+        live_count, live_seat = _live_player_count_and_last_kernel(self.players, self.num_players)
+        if live_count == 1:
+            self._award_pot_without_showdown(live_seat)
             return
 
-        if self._all_live_players_all_in() or not self.pending_to_act:
+        if _all_live_players_all_in_kernel(self.players, self.num_players) or not self.pending_to_act:
             self._runout_and_showdown()
             return
 
