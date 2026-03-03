@@ -1,0 +1,170 @@
+# Pluribus-RI Progress
+
+Last updated: 2026-03-03
+
+## Current status
+
+- Phase 0 (Foundations) complete.
+- Deterministic six-player no-limit hold'em core engine implemented.
+- Legal action generation implemented (`fold`, `check`, `call`, `raise` with min/max raise-to validation).
+- Showdown resolution with side-pot support implemented.
+- Hand-history export + deterministic replay implemented.
+- Phase 1 (Blueprint trainer skeleton) complete.
+- Phase 2 (First playable blueprint) complete.
+- Phase 3 (Real-time search) complete.
+- Phase 4 (abstraction-quality controls and table configurability) complete.
+- Phase 5 (quality benchmarking + comparative evaluation) started.
+- Deterministic public-state/infoset key helpers added.
+- Lazy regret allocation with 4-byte integer storage and regret floor clipping added.
+- External-sampling Linear MCCFR trainer skeleton with linear weighting and configurable pruning added.
+- Engine-to-abstraction round-specific state indexing wired.
+- Dedicated abstract game builder added for action abstraction + infoset/public-state keying.
+- V1 abstract NLTH game adapter wired to the dedicated builder for MCCFR traversals.
+- Training runner added with periodic checkpoint + strategy snapshot exports.
+- Phase 2 training runner added with playable blueprint export and deterministic self-play validation.
+- Blueprint policy module added for end-to-end action selection from saved snapshots.
+- Runtime-search layer added with round-start public root rebuilding and outside-observer belief-state interfaces.
+- Nested unsafe subgame resolver added with iterative external-sampling MCCFR on depth-limited subgames.
+- Leaf continuation strategies added (`blueprint`, `fold_biased`, `call_biased`, `raise_biased`) with configurable mixtures.
+- Subgame stopping rules added (iteration/node/wallclock limits + leaf-depth cutoff).
+- Off-tree action insertion and pseudo-harmonic raise translation added for current-round re-solving.
+- Own-action freezing maps added for current-round nested re-solving consistency.
+- Runtime-search optimization guardrails added: golden regression corpus, randomized property tests, and benchmark harness with latency percentiles.
+- Runtime-search optimization pass 1 complete: replaced hot-path `deepcopy` usage with fast engine cloning for subgame traversal and leaf rollouts.
+- Phase 4 abstraction controls added: canonical 169 preflop bucket policy and street-specific postflop raise-fraction tables.
+- Dedicated abstraction-table config loader/writer added for file-based raise/bucket policy tuning.
+- Phase 4 postflop bucket controls added: opt-in `texture_v1` postflop bucket policy and offline calibration metrics.
+- Phase 5 evaluation controls added: exploitability-proxy reporting against configurable baseline policy pools.
+- Phase 5 baseline pool expanded with stronger scripted policies (`tight_aggressive`, `loose_aggressive`, `pot_odds`) and explicit oracle-style cheater baselines (`cheater_weak`, `cheater_strong`) for stress tests.
+- Phase 5 variance-reduction controls added: optional control-variate adjusted confidence intervals for league and exploitability-proxy reports.
+- Phase 5 AIVAT controls added: action-correction adjusted utility/CI estimates from per-decision legal-action value baselines.
+- Added simple core verification tests for engine invariants and solver action-quality learning behavior.
+- Unit tests added and passing.
+
+## Completed work
+
+- Added core engine module at `pluribus_ri/core/engine.py`.
+- Added package exports in `pluribus_ri/__init__.py` and `pluribus_ri/core/__init__.py`.
+- Added tests in `tests/test_engine.py`.
+- Added `eval7` to dependencies in `pyproject.toml`.
+- Added PRD decision log in `PRD_DECISIONS.md`.
+- Added abstraction helpers in `pluribus_ri/abstraction/infoset.py`.
+- Added engine-aware state indexer in `pluribus_ri/abstraction/state_indexer.py`.
+- Added solver scaffolding in `pluribus_ri/solver/regret_table.py` and `pluribus_ri/solver/linear_mccfr.py`.
+- Added v1 NLTH abstract game adapter in `pluribus_ri/solver/nlth_game.py`.
+- Added dedicated abstract game builder in `pluribus_ri/abstraction/game_builder.py`.
+- Added playable blueprint policy utilities in `pluribus_ri/blueprint/policy.py`.
+- Added runtime-search public root + belief scaffolding in `pluribus_ri/runtime_search/public_root.py` and `pluribus_ri/runtime_search/beliefs.py`.
+- Added nested-unsafe subgame resolver in `pluribus_ri/runtime_search/nested_search.py`.
+- Added off-tree insertion + pseudo-harmonic mapping in `pluribus_ri/runtime_search/action_translation.py`.
+- Added continuation strategy leaf evaluator in `pluribus_ri/runtime_search/continuation.py`.
+- Added search stopping policy utilities in `pluribus_ri/runtime_search/stopping.py`.
+- Added training snapshot extraction in `pluribus_ri/training/snapshots.py`.
+- Added training artifact persistence in `pluribus_ri/training/persistence.py`.
+- Extended training runner with Phase 2 flow in `pluribus_ri/training/runner.py`.
+- Extended CLI entrypoint for phase selection and self-play validation in `pluribus_ri/train_blueprint.py`.
+- Added tests in `tests/test_abstraction.py` and `tests/test_solver.py`.
+- Added tests in `tests/test_state_indexer.py` and `tests/test_nlth_game.py`.
+- Added tests in `tests/test_training_snapshots.py` and `tests/test_training_runner.py`.
+- Added tests in `tests/test_core_verification.py`.
+- Added tests in `tests/test_abstract_game_builder.py` and `tests/test_blueprint_policy.py`.
+- Added tests in `tests/test_runtime_search.py`.
+- Added tests in `tests/test_nested_search.py`.
+- Added tests in `tests/test_runtime_phase3_components.py`.
+- Added runtime-search golden corpus in `tests/data/runtime_search_golden_v1.json`.
+- Added runtime-search regression tests in `tests/test_runtime_search_regression.py`.
+- Added runtime-search property tests in `tests/test_runtime_search_properties.py`.
+- Added runtime-search benchmark module in `pluribus_ri/runtime_search/benchmark.py`.
+- Added runtime-search benchmark CLI in `pluribus_ri/bench_runtime_search.py`.
+- Added benchmark tests in `tests/test_runtime_search_benchmark.py`.
+- Added engine simulation-clone test in `tests/test_engine.py`.
+- Added abstraction-table config utilities in `pluribus_ri/abstraction/tables.py`.
+- Extended abstraction builder/state indexer with Phase 4 controls in `pluribus_ri/abstraction/game_builder.py` and `pluribus_ri/abstraction/state_indexer.py`.
+- Extended training CLI/config wiring for abstraction-table files in `pluribus_ri/train_blueprint.py` and `pluribus_ri/training/runner.py`.
+- Added tests in `tests/test_abstraction_tables.py`.
+- Added postflop bucket calibration metrics in `pluribus_ri/abstraction/metrics.py`.
+- Added abstraction analysis CLI in `pluribus_ri/analyze_abstraction.py`.
+- Added tests in `tests/test_abstraction_metrics.py`.
+- Added Phase 5 one-vs-field league evaluator in `pluribus_ri/blueprint/evaluation.py`.
+- Added Phase 5 evaluation CLI in `pluribus_ri/evaluate_blueprints.py`.
+- Extended Phase 5 evaluator with exploitability-proxy reports and baseline strategy controls.
+- Extended Phase 5 evaluator with control-variate adjusted CI metrics and variance-reduction diagnostics.
+- Extended Phase 5 evaluator with AIVAT-style action-correction estimation and diagnostics.
+- Added tests in `tests/test_blueprint_evaluation.py`.
+
+## Validation
+
+- Command run: `python -m unittest discover -s tests -v`
+- Result: 62 tests passed.
+- Command run: MCCFR smoke (`iterations=1`) on NLTH adapter.
+- Result: traversal completed (`nodes_touched=134`).
+- Command run: `python -m pluribus_ri.train_blueprint --iterations 2 --checkpoint-interval 1 --snapshot-interval 1 --output-dir artifacts/phase1_smoke --random-seed 3`
+- Result: checkpoints/snapshots/summary generated; run completed.
+- Command run: `python -m pluribus_ri.train_blueprint --phase 2 --iterations 2 --checkpoint-interval 1 --snapshot-interval 1 --self-play-hands 4 --self-play-seed 77 --max-raise-actions 2 --random-seed 13 --output-dir artifacts/phase2_smoke`
+- Result: checkpoints/snapshots/summary plus playable blueprint export generated; self-play completed with zero-sum check (`0.0`).
+- Command run: nested-search smoke via Python snippet (`build_public_search_root` + `NestedUnsafeSearcher().search(...)`).
+- Result: search returned a legal root action with CFR iterations, stopping reason, and per-action value estimates.
+- Command run: `python -m pluribus_ri.bench_runtime_search --runs 6 --seed-start 200 --max-prefix-actions 8 --random-action-seed 42 --min-cfr-iterations 1 --max-cfr-iterations 2 --rollout-count 1 --max-actions-per-rollout 64 --max-wallclock-ms 1000`
+- Result: benchmark JSON emitted with latency p50/p95/p99, node stats, stop-reason counts, and per-street/action distributions.
+- Command run: `python -m pluribus_ri.bench_runtime_search --runs 40 --seed-start 1000 --max-prefix-actions 20 --random-action-seed 20260303 --search-random-seed 9 --min-cfr-iterations 4 --max-cfr-iterations 16 --max-nodes-touched 75000 --max-wallclock-ms 250 --leaf-max-depth 12 --rollout-count 4 --max-actions-per-rollout 96 --leaf-random-seed 11 --output-path artifacts/phase3_bench/bench_2026-03-03_r40_pass1b.json`
+- Result: mean latency `124.38ms` (from `373.19ms` baseline), p95 `279.28ms` (from `793.92ms`), mean nodes visited `1877.38` (from `935.25`), stop reasons shifted toward `max_iterations`.
+- Command run: `python -m pluribus_ri.train_blueprint --phase 1 --iterations 1 --checkpoint-interval 1 --snapshot-interval 1 --random-seed 5 --output-dir artifacts/phase4_smoke --abstraction-config artifacts/phase4_abstraction_tables_smoke.json`
+- Result: training completed with file-driven abstraction tables and canonical preflop bucket policy.
+- Command run: `python -m pluribus_ri.analyze_abstraction --samples 1200 --seed 9 --output-path artifacts/phase4_bucket_analysis.json`
+- Result: calibration report generated for `legacy` and `texture_v1`; `texture_v1` used more buckets (`111` vs `30`) and reduced weighted in-bucket score standard deviation (`155495` vs `182816`) on sampled postflop states.
+- Command run: `python -m pluribus_ri.train_blueprint --phase 1 --iterations 1 --checkpoint-interval 1 --snapshot-interval 1 --random-seed 4 --output-dir artifacts/phase4_postflop_policy_smoke --preflop-bucket-policy canonical169 --postflop-bucket-policy texture_v1 --max-raise-actions 2`
+- Result: Phase 1 smoke run completed with both canonical preflop and `texture_v1` postflop bucket policies enabled.
+- Command run: `python -m pluribus_ri.evaluate_blueprints --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy phase2_smoke=artifacts/phase2_smoke/blueprints/blueprint_iter_000002.json --num-hands-per-seat 2 --random-seed 21 --max-raise-actions 2 --output-path artifacts/phase5_smoke/league_eval.json`
+- Result: Phase 5 one-vs-field cross-play league report generated with mbb/hand matrix, 95% CIs, and zero-sum diagnostics.
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report exploitability_proxy --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --num-hands-per-seat 1 --proxy-baselines uniform,check_fold --random-seed 31 --max-raise-actions 2 --output-path artifacts/phase5_smoke/proxy_eval_single.json`
+- Result: exploitability-proxy report generated for a single blueprint against configurable baseline pool, including proxy exploitability (`mbb/hand`) and zero-sum diagnostics.
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report all --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy phase2_smoke=artifacts/phase2_smoke/blueprints/blueprint_iter_000002.json --num-hands-per-seat 1 --proxy-baselines uniform,call_biased --random-seed 31 --max-raise-actions 2 --output-path artifacts/phase5_smoke/combined_eval_r2.json`
+- Result: combined Phase 5 report generated with both league matrix and exploitability-proxy ranking in one artifact.
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report all --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy phase2_smoke=artifacts/phase2_smoke/blueprints/blueprint_iter_000002.json --num-hands-per-seat 2 --control-variate-baseline uniform --proxy-baselines uniform,call_biased --random-seed 37 --max-raise-actions 2 --output-path artifacts/phase5_smoke/combined_eval_cv.json`
+- Result: combined report generated with control-variate adjusted CI/stdev diagnostics (`control_variate` sections on league and proxy matchups).
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report exploitability_proxy --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --num-hands-per-seat 2 --control-variate-baseline none --proxy-control-variate-baseline uniform --proxy-baselines check_fold,call_biased --random-seed 37 --max-raise-actions 2 --output-path artifacts/phase5_smoke/proxy_eval_cv_single.json`
+- Result: single-candidate exploitability-proxy report generated with proxy-specific control-variate baseline override.
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report all --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy phase2_smoke=artifacts/phase2_smoke/blueprints/blueprint_iter_000002.json --num-hands-per-seat 2 --aivat --aivat-rollouts-per-action 1 --aivat-max-actions-per-rollout 24 --aivat-max-branching 8 --control-variate-baseline uniform --proxy-baselines uniform,call_biased --random-seed 43 --max-raise-actions 2 --output-path artifacts/phase5_smoke/combined_eval_aivat.json`
+- Result: combined report generated with `aivat` sections (action-correction adjusted means/CIs plus correction-coverage diagnostics) for both league and exploitability-proxy matchups.
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report exploitability_proxy --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy phase2_smoke=artifacts/phase2_smoke/blueprints/blueprint_iter_000002.json --num-hands-per-seat 8 --random-seed 20260303 --max-raise-actions 2 --control-variate-baseline uniform --proxy-baselines call_biased,pot_odds,cheater_weak,cheater_strong --output-path artifacts/phase5_eval/proxy_r8_cheaters.json`
+- Result: exploitability proxy generated with new cheater baselines; `cheater_strong` became worst-case baseline for both candidates in this sample.
+- Command run: `python -m pluribus_ri.train_blueprint --phase 2 --iterations 120 --checkpoint-interval 40 --snapshot-interval 40 --self-play-hands 24 --self-play-seed 1701 --max-raise-actions 2 --random-seed 17 --output-dir artifacts/phase2_plus_s17_i120`
+- Result: new 120-iteration candidate blueprint generated (`artifacts/phase2_plus_s17_i120/blueprints/blueprint_iter_000120.json`).
+- Command run: `python -m pluribus_ri.train_blueprint --phase 2 --iterations 120 --checkpoint-interval 40 --snapshot-interval 40 --self-play-hands 24 --self-play-seed 2301 --max-raise-actions 2 --random-seed 23 --output-dir artifacts/phase2_plus_s23_i120`
+- Result: new 120-iteration candidate blueprint generated (`artifacts/phase2_plus_s23_i120/blueprints/blueprint_iter_000120.json`).
+- Command run: `python -m pluribus_ri.train_blueprint --phase 2 --iterations 120 --checkpoint-interval 40 --snapshot-interval 40 --self-play-hands 24 --self-play-seed 2901 --max-raise-actions 2 --random-seed 29 --output-dir artifacts/phase2_plus_s29_i120`
+- Result: new 120-iteration candidate blueprint generated (`artifacts/phase2_plus_s29_i120/blueprints/blueprint_iter_000120.json`).
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report league --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy s17_i120=artifacts/phase2_plus_s17_i120/blueprints/blueprint_iter_000120.json --policy s23_i120=artifacts/phase2_plus_s23_i120/blueprints/blueprint_iter_000120.json --policy s29_i120=artifacts/phase2_plus_s29_i120/blueprints/blueprint_iter_000120.json --num-hands-per-seat 8 --random-seed 20260303 --max-raise-actions 2 --control-variate-baseline uniform --output-path artifacts/phase5_eval/league_r8_newbatch.json`
+- Result: four-way league report generated for the new training batch.
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report exploitability_proxy --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy s17_i120=artifacts/phase2_plus_s17_i120/blueprints/blueprint_iter_000120.json --policy s23_i120=artifacts/phase2_plus_s23_i120/blueprints/blueprint_iter_000120.json --policy s29_i120=artifacts/phase2_plus_s29_i120/blueprints/blueprint_iter_000120.json --num-hands-per-seat 8 --random-seed 20260303 --max-raise-actions 2 --control-variate-baseline uniform --proxy-baselines uniform,check_fold,call_biased,raise_biased,tight_aggressive,loose_aggressive,pot_odds --output-path artifacts/phase5_eval/proxy_r8_newbatch_strongfair.json`
+- Result: fair-heuristic proxy ranking favored `s17_i120` in this sample (`proxy_exploitability_mbb_per_hand=9268.125`).
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report exploitability_proxy --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy s17_i120=artifacts/phase2_plus_s17_i120/blueprints/blueprint_iter_000120.json --policy s23_i120=artifacts/phase2_plus_s23_i120/blueprints/blueprint_iter_000120.json --policy s29_i120=artifacts/phase2_plus_s29_i120/blueprints/blueprint_iter_000120.json --num-hands-per-seat 8 --random-seed 20260303 --max-raise-actions 2 --control-variate-baseline uniform --proxy-baselines cheater_weak,cheater_strong --output-path artifacts/phase5_eval/proxy_r8_newbatch_cheaterstress.json`
+- Result: cheater-stress ranking remained harsh; `phase2_small` was best under explicit cheater baselines in this sample.
+- Command run: `python -m pluribus_ri.train_blueprint --phase 2 --iterations 400 --checkpoint-interval 100 --snapshot-interval 100 --self-play-hands 24 --self-play-seed 1702 --max-raise-actions 2 --random-seed 17 --output-dir artifacts/phase2_plus_s17_i400`
+- Result: longer-run candidate blueprint generated (`artifacts/phase2_plus_s17_i400/blueprints/blueprint_iter_000400.json`).
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report all --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy s17_i120=artifacts/phase2_plus_s17_i120/blueprints/blueprint_iter_000120.json --num-hands-per-seat 32 --random-seed 20260303 --max-raise-actions 2 --control-variate-baseline uniform --proxy-baselines uniform,check_fold,call_biased,raise_biased,tight_aggressive,loose_aggressive,pot_odds --output-path artifacts/phase5_eval/confirm_phase2small_vs_s17_r32.json`
+- Result: higher-sample confirm run showed much lower proxy exploitability for `s17_i120` than `phase2_small` but no clear league separation (overlapping CIs).
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report all --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy s17_i400=artifacts/phase2_plus_s17_i400/blueprints/blueprint_iter_000400.json --num-hands-per-seat 32 --random-seed 20260303 --max-raise-actions 2 --control-variate-baseline uniform --proxy-baselines uniform,check_fold,call_biased,raise_biased,tight_aggressive,loose_aggressive,pot_odds --output-path artifacts/phase5_eval/confirm_phase2small_vs_s17i400_r32.json`
+- Result: `s17_i400` produced nearly identical observed league/proxy metrics to `s17_i120` at this eval seed/sample.
+- Command run: `python -m pluribus_ri.train_blueprint --phase 2 --iterations 5000 --checkpoint-interval 5000 --snapshot-interval 5000 --self-play-hands 64 --self-play-seed 1705 --max-raise-actions 2 --random-seed 17 --output-dir artifacts/phase2_big_s17_i5000`
+- Result: large legacy run completed (`infosets_allocated=584446`, `nodes_touched=906245`, `traversals_completed=30000`).
+- Command run: `python -m pluribus_ri.train_blueprint --phase 2 --iterations 5000 --checkpoint-interval 5000 --snapshot-interval 5000 --self-play-hands 64 --self-play-seed 2305 --max-raise-actions 2 --random-seed 23 --output-dir artifacts/phase2_big_s23_i5000`
+- Result: large legacy run completed (`infosets_allocated=591370`, `nodes_touched=916277`, `traversals_completed=30000`).
+- Command run: `python -m pluribus_ri.train_blueprint --phase 2 --iterations 5000 --checkpoint-interval 5000 --snapshot-interval 5000 --self-play-hands 64 --self-play-seed 3105 --max-raise-actions 2 --random-seed 31 --output-dir artifacts/phase2_big_s31_i5000_c169_t1 --preflop-bucket-policy canonical169 --postflop-bucket-policy texture_v1`
+- Result: large canonical/texture run completed (`infosets_allocated=586446`, `nodes_touched=909642`, `traversals_completed=30000`).
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report all --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy s17_i120=artifacts/phase2_plus_s17_i120/blueprints/blueprint_iter_000120.json --policy big_s17_i5000=artifacts/phase2_big_s17_i5000/blueprints/blueprint_iter_005000.json --policy big_s23_i5000=artifacts/phase2_big_s23_i5000/blueprints/blueprint_iter_005000.json --policy big_s31_i5000_c169_t1=artifacts/phase2_big_s31_i5000_c169_t1/blueprints/blueprint_iter_005000.json --num-hands-per-seat 16 --random-seed 20260303 --max-raise-actions 2 --control-variate-baseline uniform --proxy-baselines uniform,check_fold,call_biased,raise_biased,tight_aggressive,loose_aggressive,pot_odds --output-path artifacts/phase5_eval/bigbatch_r16_all_strongfair.json`
+- Result: large-batch comparison showed mixed objective behavior: `phase2_small` led league aggregate while `s17_i120` and `big_s23_i5000` led fair-proxy robustness.
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report exploitability_proxy --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy s17_i120=artifacts/phase2_plus_s17_i120/blueprints/blueprint_iter_000120.json --policy big_s17_i5000=artifacts/phase2_big_s17_i5000/blueprints/blueprint_iter_005000.json --policy big_s23_i5000=artifacts/phase2_big_s23_i5000/blueprints/blueprint_iter_005000.json --policy big_s31_i5000_c169_t1=artifacts/phase2_big_s31_i5000_c169_t1/blueprints/blueprint_iter_005000.json --num-hands-per-seat 16 --random-seed 20260303 --max-raise-actions 2 --control-variate-baseline uniform --proxy-baselines cheater_weak,cheater_strong --output-path artifacts/phase5_eval/bigbatch_r16_cheaterstress.json`
+- Result: cheater-stress proxy remained harsh; no large-run candidate outperformed `phase2_small` under cheater baselines in this sample.
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report all --policy phase2_small=artifacts/phase2_small/blueprints/blueprint_iter_000020.json --policy big_s23_i5000=artifacts/phase2_big_s23_i5000/blueprints/blueprint_iter_005000.json --num-hands-per-seat 64 --random-seed 20260303 --max-raise-actions 2 --control-variate-baseline uniform --proxy-baselines uniform,check_fold,call_biased,raise_biased,tight_aggressive,loose_aggressive,pot_odds --output-path artifacts/phase5_eval/confirm_phase2small_vs_bigs23_r64.json`
+- Result: high-sample confirm showed large fair-proxy improvement for `big_s23_i5000` (`5408` vs `25190` proxy exploitability mbb/hand) but league still favored `phase2_small`.
+- Command run: `python -m pluribus_ri.evaluate_blueprints --report exploitability_proxy --policy big_s31_i5000_c169_t1=artifacts/phase2_big_s31_i5000_c169_t1/blueprints/blueprint_iter_005000.json --num-hands-per-seat 64 --random-seed 20260303 --max-raise-actions 2 --preflop-bucket-policy canonical169 --postflop-bucket-policy texture_v1 --control-variate-baseline uniform --proxy-baselines uniform,check_fold,call_biased,raise_biased,tight_aggressive,loose_aggressive,pot_odds --output-path artifacts/phase5_eval/proxy_big_s31_i5000_c169_t1_r64_matched.json`
+- Result: matched-abstraction standalone proxy for canonical/texture candidate remained weaker than the best legacy large-run proxy result in this sample.
+
+## Next milestones
+
+- Add configurable pseudo-harmonic parameters and off-tree insertion policy controls.
+- Add CI thresholds for runtime-search regression corpus drift and benchmark regressions.
+- Phase boundary note: full AIVAT chance/imaginary-observation correction terms remain evaluation work in Phase 5.
+- Add strategy restore/resume support from checkpoints for long training runs.
+- Extend the new Phase 5 evaluation harness from action-correction AIVAT to fuller chance-correction AIVAT and tighter confidence intervals.

@@ -1,0 +1,446 @@
+{
+  "config": {
+    "random_seed": 9,
+    "freeze_own_actions": true,
+    "insert_off_tree_actions": true,
+    "history_scope": "street",
+    "stopping_rules": {
+      "min_cfr_iterations": 1,
+      "max_cfr_iterations": 4,
+      "max_nodes_touched": 10000,
+      "max_wallclock_ms": 1000,
+      "leaf_max_depth": 7
+    },
+    "leaf_continuation": {
+      "rollout_count": 2,
+      "max_actions_per_rollout": 96,
+      "random_seed": 11
+    }
+  },
+  "cases": [
+    {
+      "name": "preflop_root",
+      "seed": 515,
+      "script": [],
+      "expected": {
+        "street": "preflop",
+        "to_act": 3,
+        "chosen": {
+          "kind": "fold",
+          "amount": 0
+        },
+        "cfr_iterations": 4,
+        "stopping_reason": "max_iterations",
+        "nodes_visited": 606,
+        "off_tree_insertions": 0,
+        "frozen_own_action_count": 0,
+        "root_strategy": [
+          0.676218,
+          0.0,
+          0.0,
+          0.0,
+          0.323782,
+          0.0
+        ],
+        "action_values": [
+          {
+            "kind": "fold",
+            "amount": 0,
+            "mean_utility": 0.0,
+            "strategy_probability": 0.676218
+          },
+          {
+            "kind": "call",
+            "amount": 0,
+            "mean_utility": -5050.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 200,
+            "mean_utility": -10000.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 300,
+            "mean_utility": -5450.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 1000,
+            "mean_utility": -10000.0,
+            "strategy_probability": 0.323782
+          },
+          {
+            "kind": "raise",
+            "amount": 10000,
+            "mean_utility": -10000.0,
+            "strategy_probability": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "preflop_open_and_flats",
+      "seed": 920,
+      "script": [
+        [
+          "raise",
+          "min"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ]
+      ],
+      "expected": {
+        "street": "preflop",
+        "to_act": 0,
+        "chosen": {
+          "kind": "raise",
+          "amount": 1000
+        },
+        "cfr_iterations": 4,
+        "stopping_reason": "max_iterations",
+        "nodes_visited": 362,
+        "off_tree_insertions": 0,
+        "frozen_own_action_count": 0,
+        "root_strategy": [
+          0.138869,
+          0.0,
+          0.136,
+          0.275302,
+          0.449829,
+          0.0
+        ],
+        "action_values": [
+          {
+            "kind": "fold",
+            "amount": 0,
+            "mean_utility": 0.0,
+            "strategy_probability": 0.138869
+          },
+          {
+            "kind": "call",
+            "amount": 0,
+            "mean_utility": -200.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 300,
+            "mean_utility": -5150.0,
+            "strategy_probability": 0.136
+          },
+          {
+            "kind": "raise",
+            "amount": 500,
+            "mean_utility": 1000.0,
+            "strategy_probability": 0.275302
+          },
+          {
+            "kind": "raise",
+            "amount": 1000,
+            "mean_utility": -10000.0,
+            "strategy_probability": 0.449829
+          },
+          {
+            "kind": "raise",
+            "amount": 10000,
+            "mean_utility": 10150.0,
+            "strategy_probability": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "flop_checked_to_btn",
+      "seed": 333,
+      "script": [
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "check"
+        ],
+        [
+          "check"
+        ]
+      ],
+      "expected": {
+        "street": "flop",
+        "to_act": 3,
+        "chosen": {
+          "kind": "raise",
+          "amount": 1200
+        },
+        "cfr_iterations": 4,
+        "stopping_reason": "max_iterations",
+        "nodes_visited": 431,
+        "off_tree_insertions": 0,
+        "frozen_own_action_count": 0,
+        "root_strategy": [
+          0.0,
+          0.292341,
+          0.0,
+          0.707659,
+          0.0
+        ],
+        "action_values": [
+          {
+            "kind": "check",
+            "amount": 0,
+            "mean_utility": -100.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 300,
+            "mean_utility": -5200.0,
+            "strategy_probability": 0.292341
+          },
+          {
+            "kind": "raise",
+            "amount": 600,
+            "mean_utility": -5350.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 1200,
+            "mean_utility": -5650.0,
+            "strategy_probability": 0.707659
+          },
+          {
+            "kind": "raise",
+            "amount": 9900,
+            "mean_utility": -10000.0,
+            "strategy_probability": 0.0
+          }
+        ]
+      }
+    },
+    {
+      "name": "flop_raise_and_folds",
+      "seed": 616,
+      "script": [
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "check"
+        ],
+        [
+          "raise",
+          "min+37"
+        ],
+        [
+          "fold"
+        ],
+        [
+          "fold"
+        ],
+        [
+          "fold"
+        ],
+        [
+          "fold"
+        ]
+      ],
+      "expected": {
+        "street": "flop",
+        "to_act": 1,
+        "chosen": {
+          "kind": "fold",
+          "amount": 0
+        },
+        "cfr_iterations": 4,
+        "stopping_reason": "max_iterations",
+        "nodes_visited": 212,
+        "off_tree_insertions": 1,
+        "frozen_own_action_count": 1,
+        "root_strategy": [
+          0.565579,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.434421
+        ],
+        "action_values": [
+          {
+            "kind": "fold",
+            "amount": 0,
+            "mean_utility": -100.0,
+            "strategy_probability": 0.565579
+          },
+          {
+            "kind": "call",
+            "amount": 0,
+            "mean_utility": 1511.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 505,
+            "mean_utility": 1442.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 874,
+            "mean_utility": 637.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 1611,
+            "mean_utility": -10000.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 9900,
+            "mean_utility": -4681.5,
+            "strategy_probability": 0.434421
+          }
+        ]
+      }
+    },
+    {
+      "name": "turn_after_flop_bet_and_check",
+      "seed": 707,
+      "script": [
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "match"
+        ],
+        [
+          "check"
+        ],
+        [
+          "raise",
+          "min"
+        ],
+        [
+          "call"
+        ],
+        [
+          "fold"
+        ],
+        [
+          "fold"
+        ],
+        [
+          "fold"
+        ],
+        [
+          "call"
+        ],
+        [
+          "match"
+        ]
+      ],
+      "expected": {
+        "street": "turn",
+        "to_act": 2,
+        "chosen": {
+          "kind": "check",
+          "amount": 0
+        },
+        "cfr_iterations": 4,
+        "stopping_reason": "max_iterations",
+        "nodes_visited": 488,
+        "off_tree_insertions": 0,
+        "frozen_own_action_count": 0,
+        "root_strategy": [
+          0.517452,
+          0.246924,
+          0.235625,
+          0.0,
+          0.0
+        ],
+        "action_values": [
+          {
+            "kind": "check",
+            "amount": 0,
+            "mean_utility": 5150.0,
+            "strategy_probability": 0.517452
+          },
+          {
+            "kind": "raise",
+            "amount": 450,
+            "mean_utility": -3075.0,
+            "strategy_probability": 0.246924
+          },
+          {
+            "kind": "raise",
+            "amount": 900,
+            "mean_utility": -1775.0,
+            "strategy_probability": 0.235625
+          },
+          {
+            "kind": "raise",
+            "amount": 1800,
+            "mean_utility": -7350.0,
+            "strategy_probability": 0.0
+          },
+          {
+            "kind": "raise",
+            "amount": 9800,
+            "mean_utility": -4650.0,
+            "strategy_probability": 0.0
+          }
+        ]
+      }
+    }
+  ]
+}

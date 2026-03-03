@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Local environments
+.venv/
+.vscode/
+
+# Generated outputs
+artifacts/
+*.cache.pkl
+
+# macOS
+.DS_Store

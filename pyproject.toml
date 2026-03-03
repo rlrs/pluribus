@@ -1,0 +1,23 @@
+[project]
+name = "pluribus"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10.13"
+dependencies = [
+    "cython>=3.2.4",
+    "eval7>=0.1.10",
+    "poker-game-runner>=0.1.15",
+    "setuptools>=82.0.0",
+]
+
+[project.scripts]
+pluribus-train = "pluribus_ri.train_blueprint:main"
+pluribus-phase1-train = "pluribus_ri.train_blueprint:main"
+pluribus-phase2-train = "pluribus_ri.train_blueprint:main"
+pluribus-phase3-benchmark = "pluribus_ri.bench_runtime_search:main"
+pluribus-phase4-analyze = "pluribus_ri.analyze_abstraction:main"
+pluribus-phase5-eval = "pluribus_ri.evaluate_blueprints:main"
+
+[tool.uv.extra-build-dependencies]
+eval7 = ["Cython<3"]
