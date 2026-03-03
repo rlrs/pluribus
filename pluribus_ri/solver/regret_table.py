@@ -1,5 +1,5 @@
 from array import array
-from typing import Iterable
+from typing import Iterable, Sequence
 
 
 INT32_MIN = -(2**31)
@@ -66,15 +66,29 @@ class LazyIntRegretTable:
             )
 
     def get_regrets(self, key: str, num_actions: int) -> list[int]:
-        self.ensure_infoset(key, num_actions)
-        return [int(v) for v in self._regrets[key]]
+        return [int(v) for v in self.regret_array(key, num_actions)]
 
     def get_average_strategy_sums(self, key: str, num_actions: int) -> list[float]:
         self.ensure_infoset(key, num_actions)
         return list(self._average_strategy[key])
 
+    def average_strategy_sums_array(self, key: str, num_actions: int) -> list[float]:
+        self.ensure_infoset(key, num_actions)
+        return self._average_strategy[key]
+
+    def average_strategy_sums_array_existing(self, key: str) -> list[float]:
+        return self._average_strategy[key]
+
+    def regret_array(self, key: str, num_actions: int) -> array:
+        self.ensure_infoset(key, num_actions)
+        return self._regrets[key]
+
     def current_strategy(self, key: str, num_actions: int) -> list[float]:
-        regrets = self.get_regrets(key, num_actions)
+        regrets = self.regret_array(key, num_actions)
+        return self.current_strategy_from_regret_array(regrets)
+
+    def current_strategy_from_regret_array(self, regrets: Sequence[int]) -> list[float]:
+        num_actions = len(regrets)
         positive = [max(0.0, float(v)) for v in regrets]
         normalizer = sum(positive)
         if normalizer <= 0.0:
@@ -119,13 +133,20 @@ class LazyIntRegretTable:
         weight: float,
     ) -> None:
         self.ensure_infoset(key, num_actions)
-        values = list(strategy)
-        if len(values) != num_actions:
-            raise ValueError("strategy length mismatch")
         if weight < 0:
             raise ValueError("weight must be non-negative")
 
         target = self._average_strategy[key]
+        if isinstance(strategy, Sequence):
+            if len(strategy) != num_actions:
+                raise ValueError("strategy length mismatch")
+            for i in range(num_actions):
+                target[i] += weight * float(strategy[i])
+            return
+
+        values = list(strategy)
+        if len(values) != num_actions:
+            raise ValueError("strategy length mismatch")
         for i, prob in enumerate(values):
             target[i] += weight * float(prob)
 

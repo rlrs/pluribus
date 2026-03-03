@@ -93,7 +93,7 @@ class NLTHAbstractGameState(ExtensiveGameState[NLTHAbstractAction]):
             raise ValueError("cannot transition from terminal state")
 
         next_engine = self.engine.clone_for_simulation()
-        next_engine.apply_action(action.to_engine_action())
+        next_engine.apply_action_spec(kind=action.kind, amount=action.amount)
 
         return NLTHAbstractGameState(
             engine=next_engine,

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
-from pluribus_ri.core import NoLimitHoldemEngine, Street
+from pluribus_ri.core import LegalActions, NoLimitHoldemEngine, Street
 
 from .state_indexer import (
     HistoryScope,
@@ -65,7 +65,7 @@ class NLTHAbstractGameBuilder:
             actions.append(("call", 0))
 
         if legal.min_raise_to is not None and legal.max_raise_to is not None:
-            for raise_to in self._raise_targets(engine=engine, seat=seat):
+            for raise_to in self._raise_targets(engine=engine, legal=legal):
                 actions.append(("raise", raise_to))
 
         return actions
@@ -85,8 +85,7 @@ class NLTHAbstractGameBuilder:
             history_scope=self.history_scope,
         ).to_token()
 
-    def _raise_targets(self, engine: NoLimitHoldemEngine, seat: int) -> list[int]:
-        legal = engine.get_legal_actions(seat)
+    def _raise_targets(self, engine: NoLimitHoldemEngine, legal: LegalActions) -> list[int]:
         if legal.min_raise_to is None or legal.max_raise_to is None:
             return []
 

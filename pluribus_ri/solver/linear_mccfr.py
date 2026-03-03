@@ -148,18 +148,18 @@ class ExternalSamplingLinearMCCFR:
             return self._traverse(state.child(action), traverser=traverser, iteration=iteration)
 
         player = state.current_player()
-        actions = list(state.legal_actions())
+        actions = state.legal_actions()
         if not actions:
             raise RuntimeError("non-terminal state has no legal actions")
 
         key = state.infoset_key(player)
         num_actions = len(actions)
-        regrets = self.regret_table.get_regrets(key, num_actions)
-        strategy = self.regret_table.current_strategy(key, num_actions)
+        regrets = self.regret_table.regret_array(key, num_actions)
 
         iteration_weight = float(iteration) if self.config.linear_weighting else 1.0
 
         if player == traverser:
+            strategy = self.regret_table.current_strategy_from_regret_array(regrets)
             candidate_indices = self._candidate_action_indices(regrets, iteration)
             traverser_strategy = _renormalize_subset(strategy, candidate_indices)
 
@@ -185,20 +185,19 @@ class ExternalSamplingLinearMCCFR:
                 )
 
             if self.config.track_average_strategy:
-                self.regret_table.accumulate_average_strategy(
-                    key=key,
+                _accumulate_strategy_sums(
+                    sums=self.regret_table.average_strategy_sums_array_existing(key),
                     strategy=traverser_strategy,
-                    num_actions=num_actions,
                     weight=iteration_weight,
                 )
 
             return node_value
 
+        strategy = self.regret_table.current_strategy_from_regret_array(regrets)
         if self.config.track_average_strategy:
-            self.regret_table.accumulate_average_strategy(
-                key=key,
+            _accumulate_strategy_sums(
+                sums=self.regret_table.average_strategy_sums_array_existing(key),
                 strategy=strategy,
-                num_actions=num_actions,
                 weight=iteration_weight,
             )
 
@@ -222,8 +221,8 @@ class ExternalSamplingLinearMCCFR:
         index = _sample_from_distribution(self.rng, normalized)
         return outcomes[index][0]
 
-    def _candidate_action_indices(self, regrets: list[int], iteration: int) -> list[int]:
-        indices = list(range(len(regrets)))
+    def _candidate_action_indices(self, regrets: Sequence[int], iteration: int) -> Sequence[int]:
+        indices = range(len(regrets))
         if self.config.prune_after_iteration <= 0 or iteration < self.config.prune_after_iteration:
             return indices
 
@@ -246,6 +245,16 @@ def _sample_from_distribution(rng: random.Random, probs: Sequence[float]) -> int
         if draw <= running:
             return idx
     return len(probs) - 1
+
+
+def _accumulate_strategy_sums(
+    *,
+    sums: list[float],
+    strategy: Sequence[float],
+    weight: float,
+) -> None:
+    for i, prob in enumerate(strategy):
+        sums[i] += weight * prob
 
 
 def _renormalize_subset(strategy: Sequence[float], kept_indices: Sequence[int]) -> list[float]:

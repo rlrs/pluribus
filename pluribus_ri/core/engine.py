@@ -224,7 +224,11 @@ class NoLimitHoldemEngine:
         cloned.to_act = self.to_act
         cloned.pending_to_act = set(self.pending_to_act)
 
-        cloned.deck = self.deck[:]
+        # Deck order is immutable after hand start; simulation clones can share it.
+        if include_rng_state:
+            cloned.deck = self.deck[:]
+        else:
+            cloned.deck = self.deck
         cloned._deck_index = self._deck_index
 
         cloned.hand_complete = self.hand_complete
@@ -286,6 +290,9 @@ class NoLimitHoldemEngine:
         )
 
     def apply_action(self, action: Action) -> None:
+        self.apply_action_spec(kind=action.kind, amount=action.amount)
+
+    def apply_action_spec(self, kind: ActionKind, amount: int = 0) -> None:
         if self.hand_complete:
             raise RuntimeError("cannot act on completed hand")
         if self.to_act is None:
@@ -293,35 +300,52 @@ class NoLimitHoldemEngine:
 
         seat = self.to_act
         player = self.players[seat]
-        legal = self.get_legal_actions(seat)
+        if not self._is_eligible_to_act(seat):
+            raise ValueError(f"seat {seat} is not eligible to act")
+
         to_call = max(0, self.current_bet - player.contributed_street)
+        call_amount = min(to_call, player.stack)
+        can_check = to_call == 0
+        can_fold = to_call > 0
+
+        min_raise_to: int | None = None
+        max_raise_to: int | None = None
+        if player.stack > to_call:
+            max_raise_to = player.contributed_street + player.stack
+            full_raise_target = self.current_bet + self.last_full_raise_size
+            if full_raise_target <= max_raise_to:
+                min_raise_to = full_raise_target
+            elif max_raise_to > self.current_bet:
+                # Short all-in raise is still legal even if it is below full raise size.
+                min_raise_to = max_raise_to
+
         logged_amount = 0
 
-        if action.kind == "fold":
-            if not legal.can_fold:
+        if kind == "fold":
+            if not can_fold:
                 raise ValueError("fold is illegal in this state")
             player.folded = True
             self.pending_to_act.discard(seat)
 
-        elif action.kind == "check":
-            if not legal.can_check:
+        elif kind == "check":
+            if not can_check:
                 raise ValueError("check is illegal when facing a bet")
             self.pending_to_act.discard(seat)
 
-        elif action.kind == "call":
-            if legal.call_amount <= 0:
+        elif kind == "call":
+            if call_amount <= 0:
                 raise ValueError("call is illegal when no chips are required")
-            self._commit_chips(seat, legal.call_amount)
-            logged_amount = legal.call_amount
+            self._commit_chips(seat, call_amount)
+            logged_amount = call_amount
             self.pending_to_act.discard(seat)
 
-        elif action.kind == "raise":
-            if legal.min_raise_to is None or legal.max_raise_to is None:
+        elif kind == "raise":
+            if min_raise_to is None or max_raise_to is None:
                 raise ValueError("raise is illegal in this state")
 
-            raise_to = int(action.amount)
-            if raise_to < legal.min_raise_to or raise_to > legal.max_raise_to:
-                raise ValueError(f"raise_to {raise_to} outside [{legal.min_raise_to}, {legal.max_raise_to}]")
+            raise_to = int(amount)
+            if raise_to < min_raise_to or raise_to > max_raise_to:
+                raise ValueError(f"raise_to {raise_to} outside [{min_raise_to}, {max_raise_to}]")
 
             additional = raise_to - player.contributed_street
             if additional <= to_call:
@@ -341,13 +365,13 @@ class NoLimitHoldemEngine:
             }
 
         else:
-            raise ValueError(f"unknown action kind: {action.kind}")
+            raise ValueError(f"unknown action kind: {kind}")
 
         self.action_log.append(
             HandHistoryAction(
                 seat=seat,
                 street=self.street.value,
-                kind=action.kind,
+                kind=kind,
                 amount=int(logged_amount),
                 pot_after=self.total_pot,
             )

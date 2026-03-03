@@ -4,7 +4,7 @@ import eval7
 
 from pluribus_ri.core import NoLimitHoldemEngine
 
-from .infoset import PublicStateKey, encode_infoset_key, normalize_action_history
+from .infoset import PublicStateKey, encode_infoset_key
 
 
 HistoryScope = Literal["street", "all"]
@@ -51,13 +51,13 @@ def build_public_state_key(
     street_name = engine.street.value
 
     if history_scope == "street":
-        raw_history = [
+        action_history = tuple(
             f"p{a.seat}:{a.kind}:{a.amount}"
             for a in engine.action_log
             if a.street == street_name
-        ]
+        )
     elif history_scope == "all":
-        raw_history = [f"{a.street}:p{a.seat}:{a.kind}:{a.amount}" for a in engine.action_log]
+        action_history = tuple(f"{a.street}:p{a.seat}:{a.kind}:{a.amount}" for a in engine.action_log)
     else:
         raise ValueError(f"unsupported history scope: {history_scope}")
 
@@ -70,7 +70,7 @@ def build_public_state_key(
         stacks=tuple(int(player.stack) for player in engine.players),
         contributed_street=tuple(int(player.contributed_street) for player in engine.players),
         active_mask=tuple(1 if player.in_hand else 0 for player in engine.players),
-        action_history=normalize_action_history(raw_history),
+        action_history=action_history,
     )
 
 
